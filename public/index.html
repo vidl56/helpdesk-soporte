@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Soporte Técnico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen py-10 px-4">
+  <div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white mb-3 shadow-lg shadow-blue-200">
+        <i class="fa-solid fa-headset text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Centro de Ayuda y Soporte</h1>
+      <p class="text-slate-500 text-sm mt-1">Genera una solicitud o consulta el estado de tu caso</p>
+    </div>
+
+    <!-- Pestañas -->
+    <div class="flex bg-slate-200/70 p-1 rounded-xl mb-6 font-medium text-sm">
+      <button onclick="toggleTab('create')" id="tab-create" class="flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition">Generar Ticket</button>
+      <button onclick="toggleTab('track')" id="tab-track" class="flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition">Consultar Estado</button>
+    </div>
+
+    <!-- Formulario Crear Ticket -->
+    <div id="section-create" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100">
+      <!-- Alerta con botón de copiado rápido -->
+      <div id="alertSuccess" class="hidden mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i>
+          <div id="alertSuccessText" class="text-sm font-medium"></div>
+        </div>
+        <button id="copyBtn" onclick="copyTicketCode()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-regular fa-copy"></i> Copiar Código
+        </button>
+      </div>
+
+      <form id="ticketForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nombre Completo</label>
+          <input type="text" id="user_name" required placeholder="Ej: Ricardo Vidal" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Departamento</label>
+            <select id="department" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <option value="">Selecciona tu área...</option>
+              <option value="Administración">Administración</option>
+              <option value="Ventas">Ventas</option>
+              <option value="Almacén">Almacén</option>
+              <option value="Facturación">Facturación</option>
+              <option value="Cajas">Cajas</option>
+              <option value="Sistemas">Sistemas</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Categoría</label>
+            <select id="category" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <option value="Red / Internet">Red / Internet</option>
+              <option value="Sistema ERP">Sistema ERP</option>
+              <option value="Impresoras / POS">Impresoras / POS</option>
+              <option value="Falla de Equipo">Falla de Equipo</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Descripción del problema</label>
+          <textarea id="issue" rows="3" required placeholder="Explica detalladamente qué sucede..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md shadow-blue-200 transition">
+          Enviar Requerimiento
+        </button>
+      </form>
+    </div>
+
+    <!-- Rastreador de Ticket -->
+    <div id="section-track" class="hidden bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-4">
+      <div class="flex gap-2">
+        <input type="text" id="trackCodeInput" onkeydown="if(event.key === 'Enter') searchTicket()" placeholder="Ingresa tu código (Ej: TK-1234 o solo 1234)" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+        <button onclick="searchTicket()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium rounded-xl transition">Consultar</button>
+      </div>
+
+      <div id="trackResult" class="hidden p-5 rounded-xl border border-slate-100 bg-slate-50/80 space-y-3"></div>
+    </div>
+  </div>
+
+  <script>
+    let lastGeneratedCode = '';
+
+    function toggleTab(tab) {
+      const isCreate = tab === 'create';
+      document.getElementById('section-create').classList.toggle('hidden', !isCreate);
+      document.getElementById('section-track').classList.toggle('hidden', isCreate);
+      document.getElementById('tab-create').className = isCreate ? 'flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition' : 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition';
+      document.getElementById('tab-track').className = !isCreate ? 'flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition' : 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition';
+    }
+
+    document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        user_name: document.getElementById('user_name').value,
+        department: document.getElementById('department').value,
+        category: document.getElementById('category').value,
+        issue: document.getElementById('issue').value
+      };
+
+      const res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      
+      lastGeneratedCode = data.code;
+      const alert = document.getElementById('alertSuccess');
+      document.getElementById('alertSuccessText').innerHTML = `¡Ticket generado con éxito! Código: <span class="font-bold underline text-base font-mono">${data.code}</span>`;
+      alert.classList.remove('hidden');
+      document.getElementById('ticketForm').reset();
+    });
+
+    async function copyTicketCode() {
+      if (!lastGeneratedCode) return;
+      await navigator.clipboard.writeText(lastGeneratedCode);
+      const btn = document.getElementById('copyBtn');
+      btn.innerHTML = `<i class="fa-solid fa-check"></i> ¡Copiado!`;
+      btn.classList.replace('bg-emerald-600', 'bg-slate-800');
+      setTimeout(() => {
+        btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copiar Código`;
+        btn.classList.replace('bg-slate-800', 'bg-emerald-600');
+      }, 2000);
+    }
+
+    async function searchTicket() {
+      const input = document.getElementById('trackCodeInput').value.trim();
+      if (!input) return;
+
+      // 1. Eliminar espacios y convertir a mayúsculas (ej: "TK - 5028" -> "TK-5028")
+      let cleanCode = input.replace(/\s+/g, '').toUpperCase();
+
+      // 2. Si escriben solo números (ej: "5028"), autocompletar "TK-"
+      if (/^\d+$/.test(cleanCode)) {
+        cleanCode = `TK-${cleanCode}`;
+      } else if (!cleanCode.startsWith('TK-') && cleanCode.startsWith('TK')) {
+        cleanCode = cleanCode.replace(/^TK/, 'TK-');
+      }
+
+      const box = document.getElementById('trackResult');
+
+      const res = await fetch(`/api/tickets/track/${encodeURIComponent(cleanCode)}`);
+      if (!res.ok) {
+        box.innerHTML = `<span class="text-rose-600 text-sm font-medium flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> No se encontró el ticket <strong>${cleanCode}</strong>. Revisa el código.</span>`;
+        box.classList.remove('hidden');
+        return;
+      }
+
+      const t = await res.json();
+      const badges = {
+        'Abierto': 'bg-rose-100 text-rose-700',
+        'En Proceso': 'bg-amber-100 text-amber-800',
+        'Resuelto': 'bg-emerald-100 text-emerald-800'
+      };
+
+      box.innerHTML = `
+        <div class="flex items-center justify-between border-b pb-2">
+          <span class="font-mono font-bold text-slate-800 text-base">${t.code}</span>
+          <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${badges[t.status] || 'bg-slate-100'}">${t.status}</span>
+        </div>
+        <p class="text-sm text-slate-600"><strong>Solicitante:</strong> ${t.user_name}</p>
+        <p class="text-sm text-slate-600"><strong>Técnico Responsable:</strong> ${t.assigned_to ? `<span class="font-semibold text-blue-600"><i class="fa-solid fa-user-check mr-1"></i>${t.assigned_to}</span>` : '<em class="text-slate-400"><i class="fa-regular fa-clock mr-1"></i>En cola de asignación</em>'}</p>
+      `;
+      box.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

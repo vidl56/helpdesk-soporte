@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - Mesa de Ayuda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+  <!-- Barra Superior -->
+  <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-slate-900 leading-tight">HelpDesk Central</h1>
+        <p class="text-xs text-slate-500">Métricas y Asignación Operativa</p>
+      </div>
+    </div>
+    <button onclick="refresh()" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded-lg transition text-slate-600 flex items-center gap-1.5">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+    </button>
+  </nav>
+
+  <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+    <!-- Tarjetas de Métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Métrica Departamentos -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-building text-blue-500"></i>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Departamentos con Más Tickets</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">TOP 5</span>
+        </div>
+        <div id="deptList" class="space-y-2 text-sm text-slate-600">Cargando...</div>
+      </div>
+
+      <!-- Métrica Técnicos -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-500"></i>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Técnicos que Más Resuelven</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">RANKING</span>
+        </div>
+        <div id="techList" class="space-y-2 text-sm text-slate-600">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Tabla de Tickets -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Cola de Requerimientos</h2>
+        <span id="ticketCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0 tickets</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+              <th class="p-4">Ticket</th>
+              <th class="p-4">Usuario</th>
+              <th class="p-4">Área</th>
+              <th class="p-4">Detalle</th>
+              <th class="p-4">Estado</th>
+              <th class="p-4">Asignado a</th>
+              <th class="p-4 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let techOptions = [];
+
+    async function init() {
+      const res = await fetch('/api/technicians');
+      techOptions = await res.json();
+      await refresh();
+      setInterval(refresh, 10000);
+    }
+
+    async function refresh() {
+      await Promise.all([loadMetrics(), loadTickets()]);
+    }
+
+    async function loadMetrics() {
+      const res = await fetch('/api/metrics');
+      const data = await res.json();
+
+      const deptDiv = document.getElementById('deptList');
+      deptDiv.innerHTML = data.topDepartments.length ? data.topDepartments.map(d => `
+        <div class="flex items-center justify-between py-1">
+          <span class="font-medium text-slate-700">${d.department}</span>
+          <span class="px-2 py-0.5 rounded-md bg-slate-100 text-xs font-bold text-slate-600">${d.total} tickets</span>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-400">Sin datos acumulados</p>';
+
+      const techDiv = document.getElementById('techList');
+      techDiv.innerHTML = data.topTechnicians.length ? data.topTechnicians.map((t, idx) => `
+        <div class="flex items-center justify-between py-1">
+          <span class="font-medium text-slate-700">#${idx+1} ${t.resolved_by}</span>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-xs font-bold text-emerald-700">${t.total} resueltos</span>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-400">Sin tickets resueltos</p>';
+    }
+
+    async function loadTickets() {
+      const res = await fetch('/api/tickets');
+      const tickets = await res.json();
+      document.getElementById('ticketCount').textContent = `${tickets.length} tickets`;
+
+      const tbody = document.getElementById('ticketsBody');
+      tbody.innerHTML = tickets.map(t => {
+        let badge = '';
+        let action = '';
+
+        if (t.status === 'Abierto') {
+          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-600 border border-rose-100">Abierto</span>`;
+          const opts = techOptions.map(tc => `<option value="${tc}">${tc}</option>`).join('');
+          action = `
+            <div class="flex items-center justify-center gap-1.5">
+              <select id="sel-${t.id}" class="text-xs border border-slate-200 rounded-lg p-1.5 bg-white outline-none">
+                <option value="">Seleccionar técnico</option>
+                ${opts}
+              </select>
+              <button onclick="assign(${t.id})" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">Asignar</button>
+            </div>
+          `;
+        } else if (t.status === 'En Proceso') {
+          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100">En Proceso</span>`;
+          action = `<button onclick="resolveTicket(${t.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition mx-auto block">Completar</button>`;
+        } else {
+          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Resuelto</span>`;
+          action = `<span class="text-xs text-slate-400 font-medium block text-center"><i class="fa-solid fa-check text-emerald-500 mr-1"></i>Finalizado</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-slate-50/50 transition">
+            <td class="p-4 font-mono font-bold text-slate-800 text-xs">${t.code}</td>
+            <td class="p-4 font-medium text-slate-700">${t.user_name}</td>
+            <td class="p-4 text-slate-600">${t.department}</td>
+            <td class="p-4 max-w-xs truncate text-slate-600" title="${t.issue}">
+              <span class="font-semibold text-slate-800">${t.category}:</span> ${t.issue}
+            </td>
+            <td class="p-4">${badge}</td>
+            <td class="p-4 text-xs font-medium ${t.assigned_to ? 'text-slate-800' : 'text-slate-400 italic'}">
+              ${t.assigned_to ? `<i class="fa-solid fa-user-gear text-slate-400 mr-1"></i> ${t.assigned_to}` : 'Sin asignar'}
+            </td>
+            <td class="p-4">${action}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function assign(id) {
+      const technician_name = document.getElementById(`sel-${id}`).value;
+      if (!technician_name) return alert('Por favor selecciona un técnico');
+
+      await fetch(`/api/tickets/${id}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ technician_name })
+      });
+      refresh();
+    }
+
+    async function resolveTicket(id) {
+      await fetch(`/api/tickets/${id}/resolve`, { method: 'PATCH' });
+      refresh();
+    }
+
+    init();
+  </script>
+</body>
+</html>
