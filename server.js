@@ -7,15 +7,14 @@ app.use(express.static('public'));
 
 const db = new sqlite3.Database('./helpdesk.db');
 
-// Lista fija de técnicos
-const TECHNICIANS = [
-  'Ricardo Vidal',
-  'Carlos Mendoza',
-  'Alejandro Silva',
-  'Mariana Gomez'
-];
+// Catálogo clasificado por niveles
+const SUPPORT_ENTITIES = {
+  'Nivel 1': ['Mesa de Entrada', 'Ricardo Vidal', 'Carlos Mendoza'],
+  'Nivel 2': ['Infraestructura / Servidores', 'Redes / Conectividad', 'Administrador BD'],
+  'Nivel 3': ['Proveedor ERP', 'Proveedor ISP / Enlaces', 'Garantía / Soporte Fabricante']
+};
 
-// Creación de tabla y migración automática
+// Base de datos y migraciones seguras
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS tickets (
@@ -25,6 +24,7 @@ db.serialize(() => {
       department TEXT,
       category TEXT,
       issue TEXT,
+      level TEXT DEFAULT 'Nivel 1',
       status TEXT DEFAULT 'Abierto',
       assigned_to TEXT DEFAULT NULL,
       resolved_by TEXT DEFAULT NULL,
@@ -33,14 +33,15 @@ db.serialize(() => {
     )
   `);
 
+  db.run(`ALTER TABLE tickets ADD COLUMN level TEXT DEFAULT 'Nivel 1'`, () => {});
   db.run(`ALTER TABLE tickets ADD COLUMN assigned_to TEXT`, () => {});
   db.run(`ALTER TABLE tickets ADD COLUMN resolved_by TEXT`, () => {});
   db.run(`ALTER TABLE tickets ADD COLUMN resolved_at DATETIME`, () => {});
 });
 
-// Lista de técnicos
-app.get('/api/technicians', (req, res) => {
-  res.json(TECHNICIANS);
+// Endpoint del catálogo de soporte
+app.get('/api/support-entities', (req, res) => {
+  res.json(SUPPORT_ENTITIES);
 });
 
 // 1. Crear Ticket
@@ -51,7 +52,7 @@ app.post('/api/tickets', (req, res) => {
   const code = `TK-${Math.floor(1000 + Math.random() * 9000)}`;
 
   db.run(
-    `INSERT INTO tickets (code, user_name, department, category, issue) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO tickets (code, user_name, department, category, issue, level) VALUES (?, ?, ?, ?, ?, 'Nivel 1')`,
     [code, user_name, department, category, issue],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
@@ -60,16 +61,16 @@ app.post('/api/tickets', (req, res) => {
   );
 });
 
-// 2. Consultar ticket por código (para el usuario)
+// 2. Consultar ticket por código
 app.get('/api/tickets/track/:code', (req, res) => {
-  db.get(`SELECT code, user_name, status, assigned_to, category, created_at FROM tickets WHERE code = ?`, [req.params.code], (err, row) => {
+  db.get(`SELECT code, user_name, status, level, assigned_to, category, created_at FROM tickets WHERE code = ?`, [req.params.code], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Ticket no encontrado' });
     res.json(row);
   });
 });
 
-// 3. Listar tickets (Panel Admin)
+// 3. Listar tickets
 app.get('/api/tickets', (req, res) => {
   db.all(`SELECT * FROM tickets ORDER BY created_at DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -77,17 +78,17 @@ app.get('/api/tickets', (req, res) => {
   });
 });
 
-// 4. Asignar técnico ('En Proceso')
-app.patch('/api/tickets/:id/assign', (req, res) => {
+// 4. Asignar / Escalar Ticket
+app.patch('/api/tickets/:id/escalate', (req, res) => {
   const { id } = req.params;
-  const { technician_name } = req.body;
+  const { level, assigned_to } = req.body;
 
   db.run(
-    `UPDATE tickets SET status = 'En Proceso', assigned_to = ? WHERE id = ?`,
-    [technician_name, id],
+    `UPDATE tickets SET level = ?, assigned_to = ?, status = 'En Proceso' WHERE id = ?`,
+    [level, assigned_to, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Ticket asignado' });
+      res.json({ message: 'Ticket escalado exitosamente' });
     }
   );
 });
@@ -99,7 +100,7 @@ app.patch('/api/tickets/:id/resolve', (req, res) => {
   db.run(
     `UPDATE tickets 
      SET status = 'Resuelto', 
-         resolved_by = CASE WHEN assigned_to IS NOT NULL THEN assigned_to ELSE 'Mesa de Soporte' END, 
+         resolved_by = CASE WHEN assigned_to IS NOT NULL THEN assigned_to ELSE 'Mesa de Entrada' END, 
          resolved_at = CURRENT_TIMESTAMP 
      WHERE id = ?`,
     [id],
@@ -110,7 +111,7 @@ app.patch('/api/tickets/:id/resolve', (req, res) => {
   );
 });
 
-// 6. Métricas
+// 6. Métricas operativas
 app.get('/api/metrics', (req, res) => {
   const topDeptQuery = `SELECT department, COUNT(*) as total FROM tickets GROUP BY department ORDER BY total DESC LIMIT 5`;
   const topTechQuery = `SELECT resolved_by, COUNT(*) as total FROM tickets WHERE status = 'Resuelto' AND resolved_by IS NOT NULL GROUP BY resolved_by ORDER BY total DESC LIMIT 5`;
@@ -124,6 +125,5 @@ app.get('/api/metrics', (req, res) => {
   });
 });
 
-// Asignación de puerto dinámico para Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`HelpDesk listo en el puerto ${PORT}`));

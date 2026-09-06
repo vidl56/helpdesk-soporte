@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
 
   <!-- Barra Superior -->
   <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
@@ -17,7 +17,7 @@
       </div>
       <div>
         <h1 class="text-base font-bold text-slate-900 leading-tight">HelpDesk Central</h1>
-        <p class="text-xs text-slate-500">Métricas y Asignación Operativa</p>
+        <p class="text-xs text-slate-500">Métricas y Asignación Multinivel</p>
       </div>
     </div>
     <button onclick="refresh()" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded-lg transition text-slate-600 flex items-center gap-1.5">
@@ -25,11 +25,10 @@
     </button>
   </nav>
 
-  <main class="max-w-7xl mx-auto p-6 space-y-6">
+  <main class="max-w-7xl mx-auto p-6 space-y-6 w-full flex-1">
 
     <!-- Tarjetas de Métricas -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <!-- Métrica Departamentos -->
       <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
@@ -41,12 +40,11 @@
         <div id="deptList" class="space-y-2 text-sm text-slate-600">Cargando...</div>
       </div>
 
-      <!-- Métrica Técnicos -->
       <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-trophy text-amber-500"></i>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Técnicos que Más Resuelven</h2>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Resolución Operativa</h2>
           </div>
           <span class="text-xs text-slate-400 font-mono">RANKING</span>
         </div>
@@ -69,9 +67,10 @@
               <th class="p-4">Usuario</th>
               <th class="p-4">Área</th>
               <th class="p-4">Detalle</th>
+              <th class="p-4">Nivel Actual</th>
               <th class="p-4">Estado</th>
               <th class="p-4">Asignado a</th>
-              <th class="p-4 text-center">Acción</th>
+              <th class="p-4 text-center">Acciones / Escalamiento</th>
             </tr>
           </thead>
           <tbody id="ticketsBody" class="divide-y divide-slate-100"></tbody>
@@ -81,12 +80,16 @@
 
   </main>
 
+  <footer class="mt-8 mb-6 text-center text-xs text-slate-400">
+    <p>Desarrollado por <span class="font-semibold text-slate-600">Tecnologías R&M</span></p>
+  </footer>
+
   <script>
-    let techOptions = [];
+    let supportEntities = {};
 
     async function init() {
-      const res = await fetch('/api/technicians');
-      techOptions = await res.json();
+      const res = await fetch('/api/support-entities');
+      supportEntities = await res.json();
       await refresh();
       setInterval(refresh, 10000);
     }
@@ -121,29 +124,46 @@
       const tickets = await res.json();
       document.getElementById('ticketCount').textContent = `${tickets.length} tickets`;
 
+      const levelBadges = {
+        'Nivel 1': 'bg-blue-50 text-blue-700 border-blue-200',
+        'Nivel 2': 'bg-purple-50 text-purple-700 border-purple-200',
+        'Nivel 3': 'bg-amber-50 text-amber-800 border-amber-200'
+      };
+
       const tbody = document.getElementById('ticketsBody');
       tbody.innerHTML = tickets.map(t => {
-        let badge = '';
-        let action = '';
+        const currentLevel = t.level || 'Nivel 1';
+        let statusBadge = '';
+        let actionControls = '';
 
-        if (t.status === 'Abierto') {
-          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-600 border border-rose-100">Abierto</span>`;
-          const opts = techOptions.map(tc => `<option value="${tc}">${tc}</option>`).join('');
-          action = `
-            <div class="flex items-center justify-center gap-1.5">
-              <select id="sel-${t.id}" class="text-xs border border-slate-200 rounded-lg p-1.5 bg-white outline-none">
-                <option value="">Seleccionar técnico</option>
-                ${opts}
-              </select>
-              <button onclick="assign(${t.id})" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">Asignar</button>
+        if (t.status === 'Resuelto') {
+          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Resuelto</span>`;
+          actionControls = `<span class="text-xs text-slate-400 font-medium block text-center"><i class="fa-solid fa-check text-emerald-500 mr-1"></i>Finalizado</span>`;
+        } else {
+          statusBadge = t.status === 'En Proceso'
+            ? `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100">En Proceso</span>`
+            : `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-600 border border-rose-100">Abierto</span>`;
+
+          actionControls = `
+            <div class="flex flex-col gap-1.5 min-w-[260px]">
+              <div class="flex items-center gap-1">
+                <select id="lvl-${t.id}" onchange="updateAssignees(${t.id})" class="text-xs border border-slate-200 rounded-lg p-1 bg-white font-medium">
+                  <option value="Nivel 1" ${currentLevel === 'Nivel 1' ? 'selected' : ''}>N1: Básico</option>
+                  <option value="Nivel 2" ${currentLevel === 'Nivel 2' ? 'selected' : ''}>N2: Infra</option>
+                  <option value="Nivel 3" ${currentLevel === 'Nivel 3' ? 'selected' : ''}>N3: Externo</option>
+                </select>
+                <select id="asg-${t.id}" class="text-xs border border-slate-200 rounded-lg p-1 bg-white flex-1">
+                  ${renderAssigneeOptions(currentLevel, t.assigned_to)}
+                </select>
+                <button onclick="escalate(${t.id})" title="Asignar o Escalar" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </button>
+              </div>
+              <button onclick="resolveTicket(${t.id})" class="w-full py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition">
+                <i class="fa-solid fa-check mr-1"></i>Completar
+              </button>
             </div>
           `;
-        } else if (t.status === 'En Proceso') {
-          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100">En Proceso</span>`;
-          action = `<button onclick="resolveTicket(${t.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition mx-auto block">Completar</button>`;
-        } else {
-          badge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Resuelto</span>`;
-          action = `<span class="text-xs text-slate-400 font-medium block text-center"><i class="fa-solid fa-check text-emerald-500 mr-1"></i>Finalizado</span>`;
         }
 
         return `
@@ -154,24 +174,42 @@
             <td class="p-4 max-w-xs truncate text-slate-600" title="${t.issue}">
               <span class="font-semibold text-slate-800">${t.category}:</span> ${t.issue}
             </td>
-            <td class="p-4">${badge}</td>
+            <td class="p-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${levelBadges[currentLevel]}">
+                ${currentLevel}
+              </span>
+            </td>
+            <td class="p-4">${statusBadge}</td>
             <td class="p-4 text-xs font-medium ${t.assigned_to ? 'text-slate-800' : 'text-slate-400 italic'}">
               ${t.assigned_to ? `<i class="fa-solid fa-user-gear text-slate-400 mr-1"></i> ${t.assigned_to}` : 'Sin asignar'}
             </td>
-            <td class="p-4">${action}</td>
+            <td class="p-4">${actionControls}</td>
           </tr>
         `;
       }).join('');
     }
 
-    async function assign(id) {
-      const technician_name = document.getElementById(`sel-${id}`).value;
-      if (!technician_name) return alert('Por favor selecciona un técnico');
+    function renderAssigneeOptions(level, currentAssigned) {
+      const list = supportEntities[level] || [];
+      return list.map(item => `
+        <option value="${item}" ${item === currentAssigned ? 'selected' : ''}>${item}</option>
+      `).join('');
+    }
 
-      await fetch(`/api/tickets/${id}/assign`, {
+    function updateAssignees(id) {
+      const selectedLevel = document.getElementById(`lvl-${id}`).value;
+      const selectTarget = document.getElementById(`asg-${id}`);
+      selectTarget.innerHTML = renderAssigneeOptions(selectedLevel, '');
+    }
+
+    async function escalate(id) {
+      const level = document.getElementById(`lvl-${id}`).value;
+      const assigned_to = document.getElementById(`asg-${id}`).value;
+
+      await fetch(`/api/tickets/${id}/escalate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ technician_name })
+        body: JSON.stringify({ level, assigned_to })
       });
       refresh();
     }
