@@ -87,6 +87,11 @@
 
       <div id="trackResult" class="hidden p-5 rounded-xl border border-slate-100 bg-slate-50/80 space-y-3"></div>
     </div>
+
+    <!-- Pie de página -->
+    <footer class="mt-8 text-center text-xs text-slate-400">
+      <p>Desarrollado por <span class="font-semibold text-slate-600">Tecnologías R&M</span></p>
+    </footer>
   </div>
 
   <script>
@@ -139,10 +144,8 @@
       const input = document.getElementById('trackCodeInput').value.trim();
       if (!input) return;
 
-      // 1. Eliminar espacios y convertir a mayúsculas (ej: "TK - 5028" -> "TK-5028")
       let cleanCode = input.replace(/\s+/g, '').toUpperCase();
 
-      // 2. Si escriben solo números (ej: "5028"), autocompletar "TK-"
       if (/^\d+$/.test(cleanCode)) {
         cleanCode = `TK-${cleanCode}`;
       } else if (!cleanCode.startsWith('TK-') && cleanCode.startsWith('TK')) {
