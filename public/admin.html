@@ -3,74 +3,154 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Administración - Mesa de Ayuda</title>
+  <title>Panel de Control | HelpDesk Central</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulseLive {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+    .pulse-dot { animation: pulseLive 2s infinite ease-in-out; }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
 
-  <!-- Barra Superior -->
-  <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+  <!-- Barra de Navegación -->
+  <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-        <i class="fa-solid fa-layer-group"></i>
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-lg shadow-blue-500/25">
+        <i class="fa-solid fa-layer-group text-lg"></i>
       </div>
       <div>
-        <h1 class="text-base font-bold text-slate-900 leading-tight">HelpDesk Central</h1>
-        <p class="text-xs text-slate-500">Métricas y Asignación Multinivel</p>
+        <h1 class="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          HelpDesk Central
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span> EN VIVO
+          </span>
+        </h1>
+        <p class="text-xs text-slate-400 font-medium">Gestión Operativa y Escalamiento Multinivel</p>
       </div>
     </div>
-    <button onclick="refresh()" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded-lg transition text-slate-600 flex items-center gap-1.5">
-      <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+    <button onclick="refresh()" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition text-slate-700 flex items-center gap-2 shadow-sm">
+      <i class="fa-solid fa-arrows-rotate"></i> Sincronizar
     </button>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 space-y-6 w-full flex-1">
 
-    <!-- Tarjetas de Métricas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-building text-blue-500"></i>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Departamentos con Más Tickets</h2>
+    <!-- 4 Tarjetas KPI Vibrantes -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tickets</p>
+            <h3 id="kpiTotal" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
           </div>
-          <span class="text-xs text-slate-400 font-mono">TOP 5</span>
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-inbox"></i>
+          </div>
         </div>
-        <div id="deptList" class="space-y-2 text-sm text-slate-600">Cargando...</div>
+        <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-trophy text-amber-500"></i>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Resolución Operativa</h2>
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Abiertos / En Cola</p>
+            <h3 id="kpiOpen" class="text-3xl font-extrabold text-rose-600 mt-1">0</h3>
           </div>
-          <span class="text-xs text-slate-400 font-mono">RANKING</span>
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
         </div>
-        <div id="techList" class="space-y-2 text-sm text-slate-600">Cargando...</div>
+        <div class="absolute inset-x-0 bottom-0 h-1 bg-rose-500"></div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">En Proceso</p>
+            <h3 id="kpiProcess" class="text-3xl font-extrabold text-amber-600 mt-1">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 h-1 bg-amber-500"></div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resueltos</p>
+            <h3 id="kpiResolved" class="text-3xl font-extrabold text-emerald-600 mt-1">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 h-1 bg-emerald-500"></div>
       </div>
     </div>
 
-    <!-- Tabla de Tickets -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700">Cola de Requerimientos</h2>
-        <span id="ticketCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0 tickets</span>
+    <!-- Analíticas de Departamentos y Técnicos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-building text-blue-500"></i>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Departamentos con Más Incidencias</h2>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono font-bold">TOP 5</span>
+        </div>
+        <div id="deptList" class="space-y-2 text-sm">Cargando...</div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-500"></i>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Especialistas con Más Resoluciones</h2>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono font-bold">RANKING</span>
+        </div>
+        <div id="techList" class="space-y-2 text-sm">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Tabla con Filtros de Nivel -->
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-800">Cola de Requerimientos</h2>
+          <span id="ticketCountBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">0</span>
+        </div>
+
+        <!-- Filtros rápidos interactivos -->
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+          <button onclick="setFilter('all')" id="btnFilter-all" class="px-3 py-1 rounded-lg bg-white shadow-sm text-slate-800">Todos</button>
+          <button onclick="setFilter('Nivel 1')" id="btnFilter-Nivel 1" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900">Nivel 1</button>
+          <button onclick="setFilter('Nivel 2')" id="btnFilter-Nivel 2" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900">Nivel 2</button>
+          <button onclick="setFilter('Nivel 3')" id="btnFilter-Nivel 3" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900">Nivel 3</button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
-            <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+            <tr class="bg-slate-50/80 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
               <th class="p-4">Ticket</th>
               <th class="p-4">Usuario</th>
               <th class="p-4">Área</th>
-              <th class="p-4">Detalle</th>
-              <th class="p-4">Nivel Actual</th>
+              <th class="p-4">Incidencia</th>
+              <th class="p-4">Nivel</th>
               <th class="p-4">Estado</th>
               <th class="p-4">Asignado a</th>
-              <th class="p-4 text-center">Acciones / Escalamiento</th>
+              <th class="p-4 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody id="ticketsBody" class="divide-y divide-slate-100"></tbody>
@@ -80,12 +160,14 @@
 
   </main>
 
-  <footer class="mt-8 mb-6 text-center text-xs text-slate-400">
-    <p>Desarrollado por <span class="font-semibold text-slate-600">Tecnologías R&M</span></p>
+  <footer class="mt-8 mb-6 text-center text-xs text-slate-400 font-medium">
+    <p>Desarrollado por <span class="font-bold text-slate-700">Tecnologías R&M</span></p>
   </footer>
 
   <script>
     let supportEntities = {};
+    let allTickets = [];
+    let activeFilter = 'all';
 
     async function init() {
       const res = await fetch('/api/support-entities');
@@ -98,31 +180,74 @@
       await Promise.all([loadMetrics(), loadTickets()]);
     }
 
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toastContainer');
+      const t = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-600' : 'bg-slate-900';
+      t.className = `${bg} text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all transform duration-300 translate-y-2 opacity-0`;
+      t.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${msg}`;
+      c.appendChild(t);
+      setTimeout(() => t.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 2500);
+    }
+
     async function loadMetrics() {
       const res = await fetch('/api/metrics');
       const data = await res.json();
 
       const deptDiv = document.getElementById('deptList');
       deptDiv.innerHTML = data.topDepartments.length ? data.topDepartments.map(d => `
-        <div class="flex items-center justify-between py-1">
+        <div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
           <span class="font-medium text-slate-700">${d.department}</span>
-          <span class="px-2 py-0.5 rounded-md bg-slate-100 text-xs font-bold text-slate-600">${d.total} tickets</span>
+          <span class="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold">${d.total} casos</span>
         </div>
-      `).join('') : '<p class="text-xs text-slate-400">Sin datos acumulados</p>';
+      `).join('') : '<p class="text-xs text-slate-400">Sin registros acumulados</p>';
 
       const techDiv = document.getElementById('techList');
       techDiv.innerHTML = data.topTechnicians.length ? data.topTechnicians.map((t, idx) => `
-        <div class="flex items-center justify-between py-1">
+        <div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
           <span class="font-medium text-slate-700">#${idx+1} ${t.resolved_by}</span>
-          <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-xs font-bold text-emerald-700">${t.total} resueltos</span>
+          <span class="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold">${t.total} resueltos</span>
         </div>
       `).join('') : '<p class="text-xs text-slate-400">Sin tickets resueltos</p>';
     }
 
     async function loadTickets() {
       const res = await fetch('/api/tickets');
-      const tickets = await res.json();
-      document.getElementById('ticketCount').textContent = `${tickets.length} tickets`;
+      allTickets = await res.json();
+      updateKPICounters();
+      renderTable();
+    }
+
+    function updateKPICounters() {
+      document.getElementById('kpiTotal').textContent = allTickets.length;
+      document.getElementById('kpiOpen').textContent = allTickets.filter(t => t.status === 'Abierto').length;
+      document.getElementById('kpiProcess').textContent = allTickets.filter(t => t.status === 'En Proceso').length;
+      document.getElementById('kpiResolved').textContent = allTickets.filter(t => t.status === 'Resuelto').length;
+    }
+
+    function setFilter(f) {
+      activeFilter = f;
+      ['all', 'Nivel 1', 'Nivel 2', 'Nivel 3'].forEach(id => {
+        const btn = document.getElementById(`btnFilter-${id}`);
+        if (id === f) {
+          btn.className = 'px-3 py-1 rounded-lg bg-white shadow-sm text-slate-900 font-bold';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900';
+        }
+      });
+      renderTable();
+    }
+
+    function renderTable() {
+      const filtered = activeFilter === 'all' 
+        ? allTickets 
+        : allTickets.filter(t => (t.level || 'Nivel 1') === activeFilter);
+
+      document.getElementById('ticketCountBadge').textContent = `${filtered.length} tickets`;
 
       const levelBadges = {
         'Nivel 1': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -131,57 +256,57 @@
       };
 
       const tbody = document.getElementById('ticketsBody');
-      tbody.innerHTML = tickets.map(t => {
+      tbody.innerHTML = filtered.map(t => {
         const currentLevel = t.level || 'Nivel 1';
         let statusBadge = '';
         let actionControls = '';
 
         if (t.status === 'Resuelto') {
-          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Resuelto</span>`;
-          actionControls = `<span class="text-xs text-slate-400 font-medium block text-center"><i class="fa-solid fa-check text-emerald-500 mr-1"></i>Finalizado</span>`;
+          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1.5 w-max"><i class="fa-solid fa-check text-[10px]"></i> Resuelto</span>`;
+          actionControls = `<span class="text-xs text-slate-400 font-semibold block text-center">Completado</span>`;
         } else {
           statusBadge = t.status === 'En Proceso'
-            ? `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100">En Proceso</span>`
-            : `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-600 border border-rose-100">Abierto</span>`;
+            ? `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 pulse-dot"></span> En Proceso</span>`
+            : `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-100 text-rose-800 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Abierto</span>`;
 
           actionControls = `
-            <div class="flex flex-col gap-1.5 min-w-[260px]">
+            <div class="flex flex-col gap-1.5 min-w-[270px]">
               <div class="flex items-center gap-1">
-                <select id="lvl-${t.id}" onchange="updateAssignees(${t.id})" class="text-xs border border-slate-200 rounded-lg p-1 bg-white font-medium">
+                <select id="lvl-${t.id}" onchange="updateAssignees(${t.id})" class="text-xs border border-slate-200 rounded-lg p-1.5 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-500">
                   <option value="Nivel 1" ${currentLevel === 'Nivel 1' ? 'selected' : ''}>N1: Básico</option>
                   <option value="Nivel 2" ${currentLevel === 'Nivel 2' ? 'selected' : ''}>N2: Infra</option>
                   <option value="Nivel 3" ${currentLevel === 'Nivel 3' ? 'selected' : ''}>N3: Externo</option>
                 </select>
-                <select id="asg-${t.id}" class="text-xs border border-slate-200 rounded-lg p-1 bg-white flex-1">
+                <select id="asg-${t.id}" class="text-xs border border-slate-200 rounded-lg p-1.5 bg-white flex-1 outline-none font-medium text-slate-700">
                   ${renderAssigneeOptions(currentLevel, t.assigned_to)}
                 </select>
-                <button onclick="escalate(${t.id})" title="Asignar o Escalar" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">
+                <button onclick="escalate(${t.id})" title="Asignar o Escalar" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
               </div>
-              <button onclick="resolveTicket(${t.id})" class="w-full py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition">
-                <i class="fa-solid fa-check mr-1"></i>Completar
+              <button onclick="resolveTicket(${t.id})" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition">
+                <i class="fa-solid fa-check mr-1"></i>Finalizar Caso
               </button>
             </div>
           `;
         }
 
         return `
-          <tr class="hover:bg-slate-50/50 transition">
-            <td class="p-4 font-mono font-bold text-slate-800 text-xs">${t.code}</td>
-            <td class="p-4 font-medium text-slate-700">${t.user_name}</td>
-            <td class="p-4 text-slate-600">${t.department}</td>
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-4 font-mono font-bold text-slate-900 text-xs">${t.code}</td>
+            <td class="p-4 font-semibold text-slate-800">${t.user_name}</td>
+            <td class="p-4 text-slate-600 font-medium">${t.department}</td>
             <td class="p-4 max-w-xs truncate text-slate-600" title="${t.issue}">
-              <span class="font-semibold text-slate-800">${t.category}:</span> ${t.issue}
+              <span class="font-bold text-slate-800">${t.category}:</span> ${t.issue}
             </td>
             <td class="p-4">
-              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${levelBadges[currentLevel]}">
+              <span class="px-2.5 py-1 text-[11px] font-bold rounded-full border ${levelBadges[currentLevel]}">
                 ${currentLevel}
               </span>
             </td>
             <td class="p-4">${statusBadge}</td>
-            <td class="p-4 text-xs font-medium ${t.assigned_to ? 'text-slate-800' : 'text-slate-400 italic'}">
-              ${t.assigned_to ? `<i class="fa-solid fa-user-gear text-slate-400 mr-1"></i> ${t.assigned_to}` : 'Sin asignar'}
+            <td class="p-4 text-xs font-semibold ${t.assigned_to ? 'text-blue-700' : 'text-slate-400 italic'}">
+              ${t.assigned_to ? `<i class="fa-solid fa-user-gear mr-1 text-slate-400"></i> ${t.assigned_to}` : 'Sin asignar'}
             </td>
             <td class="p-4">${actionControls}</td>
           </tr>
@@ -211,11 +336,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ level, assigned_to })
       });
+      showToast(`Ticket derivado a ${level} (${assigned_to})`, 'success');
       refresh();
     }
 
     async function resolveTicket(id) {
       await fetch(`/api/tickets/${id}/resolve`, { method: 'PATCH' });
+      showToast('Ticket finalizado correctamente', 'success');
       refresh();
     }
 

@@ -3,96 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal de Soporte Técnico</title>
+  <title>Portal de Soporte Técnico | Centro de Ayuda</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(37, 99, 255, 0.45); }
+    }
+    .glow-header { animation: pulseGlow 4s infinite ease-in-out; }
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen py-10 px-4">
-  <div class="max-w-2xl mx-auto">
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white mb-3 shadow-lg shadow-blue-200">
-        <i class="fa-solid fa-headset text-2xl"></i>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 min-h-screen py-10 px-4 flex flex-col justify-between font-sans">
+  <div class="max-w-2xl mx-auto w-full">
+    
+    <!-- Encabezado con degradado vibrante -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white mb-4 shadow-xl shadow-blue-500/25 glow-header transform transition hover:scale-105 duration-300">
+        <i class="fa-solid fa-headset text-3xl"></i>
       </div>
-      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Centro de Ayuda y Soporte</h1>
-      <p class="text-slate-500 text-sm mt-1">Genera una solicitud o consulta el estado de tu caso</p>
+      <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Centro de Ayuda y Soporte</h1>
+      <p class="text-slate-500 text-sm mt-1.5 font-medium">Plataforma interna de atención y seguimiento técnico</p>
+    </header>
+
+    <!-- Selector de pestañas -->
+    <div class="flex bg-slate-200/80 p-1.5 rounded-2xl mb-6 font-semibold text-sm shadow-inner backdrop-blur-sm">
+      <button onclick="toggleTab('create')" id="tab-create" class="flex-1 py-2.5 rounded-xl bg-white text-blue-600 shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-plus-circle text-xs"></i> Generar Ticket
+      </button>
+      <button onclick="toggleTab('track')" id="tab-track" class="flex-1 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i> Consultar Estado
+      </button>
     </div>
 
-    <!-- Pestañas -->
-    <div class="flex bg-slate-200/70 p-1 rounded-xl mb-6 font-medium text-sm">
-      <button onclick="toggleTab('create')" id="tab-create" class="flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition">Generar Ticket</button>
-      <button onclick="toggleTab('track')" id="tab-track" class="flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition">Consultar Estado</button>
-    </div>
-
-    <!-- Formulario Crear Ticket -->
-    <div id="section-create" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100">
-      <!-- Alerta con botón de copiado rápido -->
-      <div id="alertSuccess" class="hidden mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <!-- Pestaña 1: Generar Ticket -->
+    <div id="section-create" class="bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 border border-white">
+      <!-- Alerta dinámica de éxito -->
+      <div id="alertSuccess" class="hidden mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm transition-all">
         <div class="flex items-center gap-3">
-          <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i>
+          <div class="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-circle-check text-lg"></i>
+          </div>
           <div id="alertSuccessText" class="text-sm font-medium"></div>
         </div>
-        <button id="copyBtn" onclick="copyTicketCode()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5 whitespace-nowrap">
+        <button id="copyBtn" onclick="copyTicketCode()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-regular fa-copy"></i> Copiar Código
         </button>
       </div>
 
       <form id="ticketForm" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nombre Completo</label>
-          <input type="text" id="user_name" required placeholder="Ej: Ricardo Vidal" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nombre Completo</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+              <i class="fa-solid fa-user text-sm"></i>
+            </span>
+            <input type="text" id="user_name" required placeholder="Ej: Ricardo Vidal" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-slate-50/50 hover:bg-white">
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Departamento</label>
-            <select id="department" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="">Selecciona tu área...</option>
-              <option value="Administración">Administración</option>
-              <option value="Ventas">Ventas</option>
-              <option value="Almacén">Almacén</option>
-              <option value="Facturación">Facturación</option>
-              <option value="Cajas">Cajas</option>
-              <option value="Sistemas">Sistemas</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Departamento</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <i class="fa-solid fa-building text-sm"></i>
+              </span>
+              <select id="department" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50/50 hover:bg-white font-medium text-slate-700">
+                <option value="">Selecciona tu área...</option>
+                <option value="Administración">Administración</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Almacén">Almacén</option>
+                <option value="Facturación">Facturación</option>
+                <option value="Cajas">Cajas</option>
+                <option value="Sistemas">Sistemas</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Categoría</label>
-            <select id="category" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="Red / Internet">Red / Internet</option>
-              <option value="Sistema ERP">Sistema ERP</option>
-              <option value="Impresoras / POS">Impresoras / POS</option>
-              <option value="Falla de Equipo">Falla de Equipo</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Categoría</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <i class="fa-solid fa-tags text-sm"></i>
+              </span>
+              <select id="category" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50/50 hover:bg-white font-medium text-slate-700">
+                <option value="Red / Internet">Red / Internet</option>
+                <option value="Sistema ERP">Sistema ERP</option>
+                <option value="Impresoras / POS">Impresoras / POS</option>
+                <option value="Falla de Equipo">Falla de Equipo</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Descripción del problema</label>
-          <textarea id="issue" rows="3" required placeholder="Explica detalladamente qué sucede..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Descripción del problema</label>
+          <textarea id="issue" rows="3" required placeholder="Explica detalladamente qué sucede o el mensaje de error..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition bg-slate-50/50 hover:bg-white"></textarea>
         </div>
 
-        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md shadow-blue-200 transition">
-          Enviar Requerimiento
+        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition duration-200 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane text-sm"></i> Enviar Requerimiento
         </button>
       </form>
     </div>
 
-    <!-- Rastreador de Ticket -->
-    <div id="section-track" class="hidden bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-4">
+    <!-- Pestaña 2: Consultar Estado (Tracker con Stepper) -->
+    <div id="section-track" class="hidden bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 border border-white space-y-5">
       <div class="flex gap-2">
-        <input type="text" id="trackCodeInput" onkeydown="if(event.key === 'Enter') searchTicket()" placeholder="Ingresa tu código (Ej: TK-1234 o solo 1234)" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono">
-        <button onclick="searchTicket()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium rounded-xl transition">Consultar</button>
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+            <i class="fa-solid fa-ticket text-sm"></i>
+          </span>
+          <input type="text" id="trackCodeInput" onkeydown="if(event.key === 'Enter') searchTicket()" placeholder="Ingresa tu código (Ej: TK-5028)" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono uppercase bg-slate-50/50">
+        </div>
+        <button onclick="searchTicket()" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-md transition">
+          Consultar
+        </button>
       </div>
 
-      <div id="trackResult" class="hidden p-5 rounded-xl border border-slate-100 bg-slate-50/80 space-y-3"></div>
+      <div id="trackResult" class="hidden p-6 rounded-2xl border border-slate-100 bg-slate-50/90 space-y-5 transition-all"></div>
     </div>
-
-    <!-- Pie de página -->
-    <footer class="mt-8 text-center text-xs text-slate-400">
-      <p>Desarrollado por <span class="font-semibold text-slate-600">Tecnologías R&M</span></p>
-    </footer>
   </div>
+
+  <footer class="mt-12 text-center text-xs text-slate-400 font-medium">
+    <p>Desarrollado por <span class="font-bold text-slate-700">Tecnologías R&M</span></p>
+  </footer>
 
   <script>
     let lastGeneratedCode = '';
@@ -101,8 +136,12 @@
       const isCreate = tab === 'create';
       document.getElementById('section-create').classList.toggle('hidden', !isCreate);
       document.getElementById('section-track').classList.toggle('hidden', isCreate);
-      document.getElementById('tab-create').className = isCreate ? 'flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition' : 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition';
-      document.getElementById('tab-track').className = !isCreate ? 'flex-1 py-2 rounded-lg bg-white text-slate-800 shadow-sm transition' : 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-800 transition';
+      document.getElementById('tab-create').className = isCreate 
+        ? 'flex-1 py-2.5 rounded-xl bg-white text-blue-600 shadow-sm transition-all duration-200 flex items-center justify-center gap-2' 
+        : 'flex-1 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center justify-center gap-2';
+      document.getElementById('tab-track').className = !isCreate 
+        ? 'flex-1 py-2.5 rounded-xl bg-white text-blue-600 shadow-sm transition-all duration-200 flex items-center justify-center gap-2' 
+        : 'flex-1 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center justify-center gap-2';
     }
 
     document.getElementById('ticketForm').addEventListener('submit', async (e) => {
@@ -123,7 +162,7 @@
       
       lastGeneratedCode = data.code;
       const alert = document.getElementById('alertSuccess');
-      document.getElementById('alertSuccessText').innerHTML = `¡Ticket generado con éxito! Código: <span class="font-bold underline text-base font-mono">${data.code}</span>`;
+      document.getElementById('alertSuccessText').innerHTML = `¡Ticket generado! Número: <span class="font-mono font-bold text-emerald-950 text-base underline ml-1">${data.code}</span>`;
       alert.classList.remove('hidden');
       document.getElementById('ticketForm').reset();
     });
@@ -133,10 +172,10 @@
       await navigator.clipboard.writeText(lastGeneratedCode);
       const btn = document.getElementById('copyBtn');
       btn.innerHTML = `<i class="fa-solid fa-check"></i> ¡Copiado!`;
-      btn.classList.replace('bg-emerald-600', 'bg-slate-800');
+      btn.classList.replace('bg-emerald-600', 'bg-slate-900');
       setTimeout(() => {
         btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copiar Código`;
-        btn.classList.replace('bg-slate-800', 'bg-emerald-600');
+        btn.classList.replace('bg-slate-900', 'bg-emerald-600');
       }, 2000);
     }
 
@@ -145,36 +184,65 @@
       if (!input) return;
 
       let cleanCode = input.replace(/\s+/g, '').toUpperCase();
-
-      if (/^\d+$/.test(cleanCode)) {
-        cleanCode = `TK-${cleanCode}`;
-      } else if (!cleanCode.startsWith('TK-') && cleanCode.startsWith('TK')) {
-        cleanCode = cleanCode.replace(/^TK/, 'TK-');
-      }
+      if (/^\d+$/.test(cleanCode)) cleanCode = `TK-${cleanCode}`;
+      else if (!cleanCode.startsWith('TK-') && cleanCode.startsWith('TK')) cleanCode = cleanCode.replace(/^TK/, 'TK-');
 
       const box = document.getElementById('trackResult');
-
       const res = await fetch(`/api/tickets/track/${encodeURIComponent(cleanCode)}`);
+
       if (!res.ok) {
-        box.innerHTML = `<span class="text-rose-600 text-sm font-medium flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> No se encontró el ticket <strong>${cleanCode}</strong>. Revisa el código.</span>`;
+        box.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 text-rose-700 text-sm font-medium flex items-center gap-2 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-lg"></i> No se encontró el ticket <strong>${cleanCode}</strong>. Revisa el código.</div>`;
         box.classList.remove('hidden');
         return;
       }
 
       const t = await res.json();
-      const badges = {
-        'Abierto': 'bg-rose-100 text-rose-700',
-        'En Proceso': 'bg-amber-100 text-amber-800',
-        'Resuelto': 'bg-emerald-100 text-emerald-800'
-      };
+
+      // Cálculo del paso del stepper (1: Abierto, 2: En Proceso, 3: Resuelto)
+      let step = 1;
+      if (t.status === 'En Proceso') step = 2;
+      if (t.status === 'Resuelto') step = 3;
+
+      const stepClass = (s) => step >= s ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-slate-200 text-slate-400';
+      const lineClass = (s) => step >= s ? 'bg-blue-600' : 'bg-slate-200';
 
       box.innerHTML = `
-        <div class="flex items-center justify-between border-b pb-2">
-          <span class="font-mono font-bold text-slate-800 text-base">${t.code}</span>
-          <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${badges[t.status] || 'bg-slate-100'}">${t.status}</span>
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Código de Caso</span>
+            <h3 class="font-mono text-xl font-extrabold text-slate-900">${t.code}</h3>
+          </div>
+          <span class="px-3 py-1 text-xs font-bold rounded-full ${t.status === 'Resuelto' ? 'bg-emerald-100 text-emerald-800' : t.status === 'En Proceso' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}">
+            ${t.status}
+          </span>
         </div>
-        <p class="text-sm text-slate-600"><strong>Solicitante:</strong> ${t.user_name}</p>
-        <p class="text-sm text-slate-600"><strong>Técnico Responsable:</strong> ${t.assigned_to ? `<span class="font-semibold text-blue-600"><i class="fa-solid fa-user-check mr-1"></i>${t.assigned_to}</span>` : '<em class="text-slate-400"><i class="fa-regular fa-clock mr-1"></i>En cola de asignación</em>'}</p>
+
+        <!-- Stepper Visual -->
+        <div class="py-2">
+          <div class="flex items-center justify-between relative">
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 z-0"></div>
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-600 z-0 transition-all duration-500" style="width: ${step === 1 ? '10%' : step === 2 ? '50%' : '100%'}"></div>
+
+            <div class="relative z-10 flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full ${stepClass(1)} flex items-center justify-center text-xs font-bold transition">1</div>
+              <span class="text-[11px] font-bold text-slate-600 mt-1.5">Registrado</span>
+            </div>
+            <div class="relative z-10 flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full ${stepClass(2)} flex items-center justify-center text-xs font-bold transition">2</div>
+              <span class="text-[11px] font-bold text-slate-600 mt-1.5">En Proceso</span>
+            </div>
+            <div class="relative z-10 flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full ${stepClass(3)} flex items-center justify-center text-xs font-bold transition">3</div>
+              <span class="text-[11px] font-bold text-slate-600 mt-1.5">Resuelto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-100 space-y-2 text-sm">
+          <p class="text-slate-600"><strong>Solicitante:</strong> <span class="text-slate-800">${t.user_name}</span></p>
+          <p class="text-slate-600"><strong>Nivel Asignado:</strong> <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700">${t.level || 'Nivel 1'}</span></p>
+          <p class="text-slate-600"><strong>Especialista:</strong> ${t.assigned_to ? `<span class="font-bold text-blue-600">${t.assigned_to}</span>` : '<em class="text-slate-400">En espera de asignación</em>'}</p>
+        </div>
       `;
       box.classList.remove('hidden');
     }
